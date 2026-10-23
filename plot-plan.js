@@ -1,0 +1,16 @@
+export function createPlotPlan(host,features,inventory,pick){
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('preserveAspectRatio','xMidYMid meet');svg.setAttribute('viewBox','-30 -30 420 860');svg.setAttribute('aria-label','Panchsheel plot cutting plan with 30 foot access road');host.append(svg);
+ const origin=features.find(f=>f.properties.role==='boundary').geometry.coordinates[0][0];const xy=([lng,lat])=>[(lng-origin[0])*111320*Math.cos(origin[1]*Math.PI/180)/.3048,800-(lat-origin[1])*111320/.3048];
+ const group=document.createElementNS(ns,'g');svg.append(group);const entries=[];
+ for(const f of features){const p=f.properties,poly=document.createElementNS(ns,'polygon');poly.setAttribute('points',f.geometry.coordinates[0].map(v=>xy(v).join(',')).join(' '));poly.setAttribute('class','plan-'+p.role);group.append(poly);if(p.role==='plot'){const unit=inventory.find(u=>u.id===p.id);const [x,y]=xy([unit.point.lng,unit.point.lat]);const text=document.createElementNS(ns,'text');text.setAttribute('x',x);text.setAttribute('y',y);text.textContent=p.id;group.append(text);poly.setAttribute('tabindex','0');poly.setAttribute('role','button');poly.onclick=e=>{if(!dragged)pick(unit)};poly.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick(unit)}};entries.push({poly,text,unit});}}
+ function label(x,y,text,rotate=0){const t=document.createElementNS(ns,'text');t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('class','road-text');if(rotate)t.setAttribute('transform',`rotate(${rotate} ${x} ${y})`);t.textContent=text;group.append(t)}
+ label(240,400,'60 FT WIDE ROAD',-90);label(75,400,'30 FT ROAD',-90);label(345,400,'30 FT ROAD',-90);label(180,25,'60 FT CONNECTING ROAD');label(100,785,'LANDSCAPED PARK');
+ let zoom=1,tx=0,ty=0,points=new Map(),lastDistance=0,dragged=false;
+ const apply=()=>group.setAttribute('transform',`translate(${180+tx} ${400+ty}) scale(${zoom}) translate(-180 -400)`);
+ svg.onwheel=e=>{e.preventDefault();zoom=Math.max(.7,Math.min(5,zoom*(e.deltaY<0?1.12:.89)));apply()};
+ svg.onpointerdown=e=>{dragged=false;points.set(e.pointerId,{x:e.clientX,y:e.clientY})};
+ svg.onpointermove=e=>{if(!points.has(e.pointerId))return;const p=points.get(e.pointerId);if(Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y)>3)dragged=true;points.set(e.pointerId,{x:e.clientX,y:e.clientY});if(points.size===2){const[a,b]=[...points.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(lastDistance)zoom=Math.max(.7,Math.min(5,zoom*d/lastDistance));lastDistance=d}else{const k=1/Math.min(svg.clientWidth/420,svg.clientHeight/860);tx+=(e.clientX-p.x)*k;ty+=(e.clientY-p.y)*k}apply()};
+ svg.onpointerup=svg.onpointercancel=e=>{points.delete(e.pointerId);lastDistance=0};
+ apply();
+ return {update(selected,match){entries.forEach(({poly,text,unit})=>{poly.setAttribute('fill',selected?.id===unit.id?'#e9bb55':unit.status==='Sold'?'#566570':unit.status==='Hold'?'#dd9f47':'#9cc765');poly.style.opacity=match(unit)?1:.2;poly.setAttribute('aria-label',`${unit.name}, ${unit.status}, ${unit.area} square feet`);text.style.opacity=match(unit)?1:.2})},zoom(d){zoom=Math.max(.7,Math.min(5,zoom+d));apply()},reset(){zoom=1;tx=ty=0;apply()}};
+}

@@ -1,0 +1,1 @@
+const fs=require('fs');const p='maps-config.js';let s=fs.readFileSync(p,'utf8');const key=process.env.GOOGLE_MAPS_API_KEY||'';if(key&&!/^AIza[\w-]+$/.test(key))throw Error('Invalid Google Maps browser key');s=s.replace(/(apiKey\s*:\s*['"])[^'"]*(['"])/i,(_,a,b)=>a+key+b);fs.writeFileSync(p,s);

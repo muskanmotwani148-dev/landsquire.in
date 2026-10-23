@@ -1,0 +1,1 @@
+fetch('/api/session').then(r=>r.json()).then(({user})=>{if(!user)return;const a=document.querySelector('#account');a.textContent=user.name+' · Log out';a.href='#';a.onclick=async e=>{e.preventDefault();const response=await fetch('/api/logout',{method:'POST'});if(response.ok)location.href='login.html'}}).catch(()=>{});
