@@ -3,7 +3,7 @@
 Website assets extracted without redesign from the supplied LandSquire-v26 (1).apk.
 
 ## Vercel
-Import this repository. Framework preset: Other. No build command. Output directory: . (repository root).
+Import this repository. Framework preset: Other. Build command: `node build.cjs`. Output directory: . (repository root).
 
 The APK Android wrapper is not needed for web hosting. Google Maps needs its browser key authorized for the deployed hostname. Demo accounts and inventory are not production authentication or live inventory.
 
